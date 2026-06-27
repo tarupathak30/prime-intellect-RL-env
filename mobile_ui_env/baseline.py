@@ -1,21 +1,9 @@
-"""
-baseline.py — heuristic agent that generates action lists for tasks.
-
-This is NOT a trained model. It uses rule-based logic derived from the task
-goal type to produce near-optimal action sequences. Used in run_eval.py to
-establish a performance ceiling and verify the environment works end-to-end.
-"""
-
 from __future__ import annotations
 
 from typing import Any
 
 
 def heuristic_agent(task: dict[str, Any]) -> list[dict[str, Any]]:
-    """
-    Given a task dict, return a list of actions that attempt to complete it.
-    Covers all goal types in the dataset.
-    """
     goal  = task.get("goal", {})
     gtype = goal.get("type", "")
 
@@ -126,7 +114,6 @@ def heuristic_agent(task: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _make_single_note(title: str) -> list[dict[str, Any]]:
-    """Return the canonical action sequence to create one note."""
     return [
         {"action": "tap",  "target": "notes_button"},
         {"action": "tap",  "target": "add_note_button"},
@@ -137,10 +124,6 @@ def _make_single_note(title: str) -> list[dict[str, Any]]:
 
 
 def dummy_agent(task: dict[str, Any]) -> list[dict[str, Any]]:
-    """
-    A deliberately bad agent that always taps the wrong things.
-    Useful for verifying that invalid actions are penalised correctly.
-    """
     return [
         {"action": "tap", "target": "nonexistent_button"},
         {"action": "type", "target": "settings_button", "text": "oops"},
@@ -149,10 +132,6 @@ def dummy_agent(task: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def random_agent(task: dict[str, Any], seed: int = 42) -> list[dict[str, Any]]:
-    """
-    Agent that picks random valid actions from the current screen.
-    For stress-testing the environment's crash-resistance.
-    """
     import random
     from mobile_ui_env.state import SCREEN_ELEMENTS
 
@@ -162,12 +141,12 @@ def random_agent(task: dict[str, Any], seed: int = 42) -> list[dict[str, Any]]:
     max_steps = task.get("max_steps", 10)
 
     nav_map = {
-        ("home", "notes_button"):    "notes",
-        ("home", "settings_button"): "settings",
-        ("home", "profile_button"):  "profile",
-        ("notes", "back_button"):    "home",
-        ("settings", "back_button"): "home",
-        ("profile", "back_button"):  "home",
+        ("home", "notes_button"): "notes",
+        ("home", "settings_button"):"settings",
+        ("home", "profile_button"):"profile",
+        ("notes", "back_button"):"home",
+        ("settings", "back_button"):"home",
+        ("profile", "back_button"):"home",
     }
 
     for _ in range(max_steps - 1):

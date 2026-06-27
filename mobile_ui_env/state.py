@@ -1,31 +1,15 @@
-"""
-AppState and screen definitions for the mobile UI environment.
-
-State space:
-  - current_screen: one of {home, notes, settings, profile}
-  - notes: list of strings (note titles saved so far)
-  - focus_mode: bool
-  - notifications: bool
-  - username: str (read-only label)
-  - email: str (read-only label)
-  - app_version: str (read-only label)
-  - note_input_buffer: str (text typed into note_input before save)
-  - invalid_action_count: int
-  - safety_violation: bool
-  - steps_taken: int
-  - observation_history: list[str] (for debugging / shaped rewards)
-"""
-
 from dataclasses import dataclass, field
 from typing import List
 
-# ---------------------------------------------------------------------------
-# Screen definitions
-# ---------------------------------------------------------------------------
 
-# Map screen → set of interactive elements available on that screen.
+# Screen definitions
+
 # Elements marked with "(read-only)" are observable but not tappable targets.
 SCREEN_ELEMENTS: dict[str, set[str]] = {
+    # this maps screen ---> buttons/elements available 
+    # basically, on this screen, what can agent interact with? 
+    # when the agent is here, current_screen = "home", 
+    # available actions are tap notes_button, tap settings_button, tap_profile_button
     "home": {
         "notes_button",
         "settings_button",
@@ -55,6 +39,9 @@ SCREEN_ELEMENTS: dict[str, set[str]] = {
 # Navigation map: which button on which screen leads where
 NAVIGATION: dict[tuple[str, str], str] = {
     ("home", "notes_button"):    "notes",
+    # the above means, if current_screen == "home" and agent taps "notes_button", then the next state is current_scree = "notes"
+    # (state, action) -> next_state(P(s'|s, a))
+
     ("home", "settings_button"): "settings",
     ("home", "profile_button"):  "profile",
     # back always goes home for simplicity
@@ -72,6 +59,16 @@ STATIC_DATA = {
 
 # Human-readable observation text per screen (bonus: for LLM-based eval)
 SCREEN_OBSERVATIONS: dict[str, str] = {
+    # this is the text representation of the screen. 
+    # why? because maybe later the agent is an LLM. 
+
+    # instead of current_screen="home", 
+    # we give, 
+    # You are on the Home screen. 
+    # Available buttons: 
+    # notes_button, settings_button, profile_button.
+
+    # an LLM can reason over this. 
     "home": (
         "You are on the Home screen. "
         "Available buttons: notes_button, settings_button, profile_button."
@@ -100,6 +97,9 @@ SCREEN_OBSERVATIONS: dict[str, str] = {
 
 @dataclass
 class AppState:
+    # this creates the actual state object. 
+    # a state is basically a snapshot your app 
+
     current_screen: str = "home"
     notes: List[str] = field(default_factory=list)
     focus_mode: bool = False
@@ -110,13 +110,34 @@ class AppState:
 
     # Transient / episode state
     note_input_buffer: str = ""
+    # imagine typing "hello", temporarily, the note_input_buffer = "hello", after save it, notes=["hello"] and note_input_buffer=""
+
     invalid_action_count: int = 0
+    # suppose an agent does, tap save_note_button while being on the home screen, that action is invalid. and hence, invalid_action_count += 1
+
     safety_violation: bool = False
+    # it's for unsafe actions, like agent trying to delete all the data, maybe environment marks True. 
+
     steps_taken: int = 0
+    # it counts, how many actions agent performed in this episode. 
+
     finished: bool = False
+    # like the goal was, "create a note with title of xyz"
+    # once agent completes, notes=['xyz'], finished = True. 
+
 
     def get_observation(self) -> str:
-        """Return human-readable observation for current screen."""
+        # this converts internal state into something the agent sees. 
+
+        # example
+        # current_screen = "settings"
+        # focus_mode = True
+        # notifications = False
+
+        # then the output becomes
+        # "you are on the settings screen. 
+        # Focus mode : True, Notifications : False, App version : 2.4.1"
+
         template = SCREEN_OBSERVATIONS[self.current_screen]
         return template.format(
             app_version=self.app_version,
@@ -127,10 +148,17 @@ class AppState:
         )
 
     def available_elements(self) -> set[str]:
+        # returns available buttons, example screen="notes", the returns {add_note_button, note_input, save_note_button, back_button}
         return SCREEN_ELEMENTS[self.current_screen]
 
     def clone(self) -> "AppState":
-        """Return a shallow copy (notes list is copied too)."""
+        # this is important, as it creates a copy of the state but why???
+        # RL algorithms often simulate, what happens if i take this action? 
+
+        # current : state A, notes = [] 
+        # try action, save_note_button
+        # new state B, notes = ['hello']
+        #  
         return AppState(
             current_screen=self.current_screen,
             notes=list(self.notes),

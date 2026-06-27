@@ -1,15 +1,3 @@
-"""
-run_eval.py — Evaluation script for the mobile UI environment.
-
-Usage:
-    python run_eval.py                          # heuristic baseline (default)
-    python run_eval.py --agent dummy            # always-wrong agent
-    python run_eval.py --agent random           # random valid-action agent
-    python run_eval.py --agent llm              # OpenAI-compatible local/remote LLM
-    python run_eval.py --split train            # run on train tasks instead
-    python run_eval.py --verbose                # print per-task breakdown
-    python run_eval.py --partial                # include partial_progress_reward
-"""
 
 from __future__ import annotations
 

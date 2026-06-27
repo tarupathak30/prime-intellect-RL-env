@@ -1,21 +1,19 @@
-"""
-Reward / rubric functions for the mobile UI environment.
+# this file is a reinforcement learning reward system. 
 
-Each function has the signature:
-    func(state: AppState, task: dict, actions: list[dict]) -> float
+# the agent does actions: 
+# agent -> tap button -> app changes state -> reward function checks performance 
 
-Reward components:
-  success_reward         1.0 if goal met, else 0.0            [SPARSE]
-  format_reward          0–1.0 based on valid JSON structure   [DENSE]
-  efficiency_reward      0–1.0 fewer steps = higher reward     [SHAPED]
-  invalid_action_penalty −0.1 per invalid action               [DENSE]
-  safety_penalty         −0.3 flat if logout triggered         [SPARSE]
-  partial_progress_reward 0–0.5 shaped sub-goal reward         [SHAPED / OPTIONAL]
+# example a task is 
 
-Final formula (clipped to [0, 1]):
-  final = success + 0.1*format + 0.2*efficiency
-          - 0.1*invalid_count - 0.3*safety_violation
-"""
+# "Create a note called homework."
+
+# the agent might do,
+# ["actions" : "tap", "target" : "notes_button"]
+# ["actions" : "tap", "target" : "add_button"]
+# ["actions" : "type", "text" : "homework"]
+# ["actions" : "tap", "target" : "save"]
+
+# at the end this file decides, did it succeed? were actions valid? did it do something dangerous? how much reward should RL algorithm get? 
 
 from __future__ import annotations
 
@@ -24,12 +22,10 @@ from typing import Any
 from mobile_ui_env.state import AppState
 
 
-# ---------------------------------------------------------------------------
-# Goal checkers (internal helpers)
-# ---------------------------------------------------------------------------
 
+# Goal checkers (internal helpers)
 def _check_goal(state: AppState, task: dict[str, Any]) -> bool:
-    """Return True if the terminal state satisfies the task goal."""
+    # did the agent complete the task? 
     goal = task.get("goal", {})
     gtype = goal.get("type", "")
 
@@ -81,23 +77,20 @@ def _check_goal(state: AppState, task: dict[str, Any]) -> bool:
     return False
 
 
-# ---------------------------------------------------------------------------
+
 # Individual reward functions
-# ---------------------------------------------------------------------------
+
 
 def success_reward(
     state: AppState,
     task: dict[str, Any],
     actions: list[dict[str, Any]],
 ) -> float:
-    """
-    Sparse reward: 1.0 if the goal is satisfied in final state, else 0.0.
-
-    Why sparse is hard for RL: the agent receives no gradient signal until it
-    accidentally completes the task. In long-horizon tasks (many screens, many
-    steps) this makes exploration extremely sample-inefficient.
-    """
+    # if succes then reward = 1, else reward = 0. this is called sparse reward. 
+    # it is the main reward function. 
+    # agent gets nothing until it succeeds. 
     return 1.0 if _check_goal(state, task) else 0.0
+
 
 
 def format_reward(
@@ -105,11 +98,6 @@ def format_reward(
     task: dict[str, Any],
     actions: list[dict[str, Any]],
 ) -> float:
-    """
-    Dense reward: fraction of actions that are structurally valid JSON dicts
-    with the required keys. Rewards the agent for producing well-formed output
-    even if the goal is not reached.
-    """
     if not actions:
         return 0.0
 
@@ -126,7 +114,7 @@ def format_reward(
             continue
         valid_count += 1
 
-    return valid_count / len(actions)
+    return valid_count / len(actions) #if agent did 10 actions and 6 were valid, then reward be 6/10 = 0.6.
 
 
 def efficiency_reward(
@@ -134,15 +122,6 @@ def efficiency_reward(
     task: dict[str, Any],
     actions: list[dict[str, Any]],
 ) -> float:
-    """
-    Shaped reward: rewards completing the task in fewer steps.
-
-    Formula: max(0, 1 - (steps_taken - min_steps) / (max_steps - min_steps))
-    where min_steps is the optimal path length and max_steps comes from the task.
-
-    Returns 0.0 if the goal was not completed (efficiency only matters when
-    success = 1.0 — we don't want to reward fast failure).
-    """
     if not _check_goal(state, task):
         return 0.0
 
@@ -162,10 +141,6 @@ def invalid_action_penalty(
     task: dict[str, Any],
     actions: list[dict[str, Any]],
 ) -> float:
-    """
-    Dense penalty: -0.1 per invalid action (accumulated in state).
-    Returned as a negative float; the rubric multiplier keeps it as-is.
-    """
     return -0.1 * state.invalid_action_count
 
 
@@ -174,10 +149,6 @@ def safety_penalty(
     task: dict[str, Any],
     actions: list[dict[str, Any]],
 ) -> float:
-    """
-    Sparse penalty: -1.0 if a safety violation occurred (logout button tapped).
-    The rubric weight (0.3) scales this to -0.3 in the final formula.
-    """
     return -1.0 if state.safety_violation else 0.0
 
 
@@ -186,29 +157,24 @@ def partial_progress_reward(
     task: dict[str, Any],
     actions: list[dict[str, Any]],
 ) -> float:
-    """
-    Shaped / optional: 0–0.5 based on reaching the correct screen even if
-    the full goal is not completed. Helps with credit assignment in long tasks.
-
-    Risk of reward hacking: an agent could learn to navigate to the target
-    screen repeatedly without completing the goal (screen-farming). Mitigate
-    by capping at 0.5 and only giving credit once per screen per episode.
-    """
     goal = task.get("goal", {})
     gtype = goal.get("type", "")
 
+    # this is for long tasks, it got target as create note, but it hasn't created one though it reached notes screen, it gets 0.3 reward.  
+
+    # this is called reward shaping. 
     screen_map = {
-        "note_created":           "notes",
-        "notes_created":          "notes",
-        "focus_mode_enabled":     "settings",
-        "focus_mode_disabled":    "settings",
-        "notifications_enabled":  "settings",
-        "notifications_disabled": "settings",
-        "read_username":          "profile",
-        "read_email":             "profile",
-        "read_version":           "settings",
-        "no_logout":              "profile",
-        "screen_visited":         goal.get("screen", ""),
+        "note_created":"notes",
+        "notes_created":"notes",
+        "focus_mode_enabled":"settings",
+        "focus_mode_disabled":"settings",
+        "notifications_enabled":"settings",
+        "notifications_disabled":"settings",
+        "read_username":"profile",
+        "read_email":"profile",
+        "read_version":"settings",
+        "no_logout":"profile",
+        "screen_visited":goal.get("screen", ""),
     }
 
     target_screen = screen_map.get(gtype)
@@ -217,9 +183,7 @@ def partial_progress_reward(
     return 0.0
 
 
-# ---------------------------------------------------------------------------
 # Rubric: weighted combination
-# ---------------------------------------------------------------------------
 
 REWARD_FUNCTIONS = [
     success_reward,
@@ -228,6 +192,7 @@ REWARD_FUNCTIONS = [
     invalid_action_penalty,
     safety_penalty,
 ]
+# these above individual reward pieces. 
 
 WEIGHTS = [1.0, 0.1, 0.2, 1.0, 0.3]
 # Note: invalid_action_penalty already returns a negative value scaled by count,
@@ -241,17 +206,6 @@ def compute_reward(
     actions: list[dict[str, Any]],
     include_partial: bool = False,
 ) -> dict[str, float]:
-    """
-    Compute all reward components and return a breakdown dict plus 'final'.
-
-    final_reward = clip(
-        1.0 * success
-        + 0.1 * format
-        + 0.2 * efficiency
-        + 1.0 * invalid_penalty   (already negative)
-        + 0.3 * safety_penalty    (already negative)
-    , 0, 1)
-    """
     s   = success_reward(state, task, actions)
     f   = format_reward(state, task, actions)
     e   = efficiency_reward(state, task, actions)
@@ -269,12 +223,12 @@ def compute_reward(
     )
 
     return {
-        "success":          s,
-        "format":           f,
-        "efficiency":       e,
-        "invalid_penalty":  inv,
-        "safety_penalty":   0.3 * saf,  # actual contribution
+        "success":s,
+        "format":f,
+        "efficiency":e,
+        "invalid_penalty":inv,
+        "safety_penalty":0.3 * saf,  # actual contribution
         "partial_progress": par,
-        "raw":              raw,
-        "final":            max(0.0, min(1.0, raw)),
+        "raw":raw,
+        "final": max(0.0, min(1.0, raw)),
     }

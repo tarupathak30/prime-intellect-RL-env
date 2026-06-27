@@ -1,31 +1,12 @@
-"""
-Dataset builder for the mobile UI environment.
-
-30 tasks total:
-  - 20 train tasks (task_001 … task_020)
-  - 10 eval tasks  (task_021 … task_030)
-
-Each task has:
-  task_id      : unique string ID
-  instruction  : natural language instruction for the agent
-  goal         : structured goal dict (checked by rubric)
-  max_steps    : hard episode limit
-  min_steps    : optimal (minimum) step count for efficiency scoring
-  split        : "train" | "eval"
-"""
-
 from __future__ import annotations
 
 from typing import Any
 
 
-# ---------------------------------------------------------------------------
 # Raw task definitions
-# ---------------------------------------------------------------------------
 
 _RAW_TASKS: list[dict[str, Any]] = [
-    # ── TRAIN ──────────────────────────────────────────────────────────────
-
+    # TRAIN 
     # Note creation (single)
     {
         "task_id": "task_001",
@@ -63,7 +44,7 @@ _RAW_TASKS: list[dict[str, Any]] = [
         "min_steps": 5,
     },
 
-    # Settings — focus mode
+    # Settings : focus mode
     {
         "task_id": "task_006",
         "instruction": "Enable focus mode",
@@ -86,7 +67,7 @@ _RAW_TASKS: list[dict[str, Any]] = [
         "min_steps": 3,
     },
 
-    # Settings — notifications
+    # Settings : notifications
     {
         "task_id": "task_009",
         "instruction": "Disable notifications",
@@ -102,7 +83,7 @@ _RAW_TASKS: list[dict[str, Any]] = [
         "min_steps": 3,
     },
 
-    # Profile — read info
+    # Profile : read info
     {
         "task_id": "task_011",
         "instruction": "Find the username from the profile screen",
@@ -125,7 +106,7 @@ _RAW_TASKS: list[dict[str, Any]] = [
         "min_steps": 2,
     },
 
-    # Settings — read version
+    # Settings : read version
     {
         "task_id": "task_014",
         "instruction": "Open settings and find the app version",
@@ -194,8 +175,7 @@ _RAW_TASKS: list[dict[str, Any]] = [
         "min_steps": 5,
     },
 
-    # ── EVAL ───────────────────────────────────────────────────────────────
-
+    #  EVAL 
     {
         "task_id": "task_021",
         "instruction": 'Create a note titled "Dentist appointment at 3pm"',
@@ -281,9 +261,8 @@ _RAW_TASKS: list[dict[str, Any]] = [
 ]
 
 
-# ---------------------------------------------------------------------------
+
 # Split assignment
-# ---------------------------------------------------------------------------
 
 _SPLIT_MAP: dict[str, str] = {}
 for _t in _RAW_TASKS:
@@ -292,17 +271,10 @@ for _t in _RAW_TASKS:
     _SPLIT_MAP[tid] = "train" if num <= 20 else "eval"
 
 
-# ---------------------------------------------------------------------------
+
 # Public API
-# ---------------------------------------------------------------------------
 
 def build_dataset(split: str = "train") -> list[dict[str, Any]]:
-    """
-    Return task dicts for the requested split ("train" or "eval").
-
-    Each returned dict has:
-      task_id, instruction, goal, max_steps, min_steps, split
-    """
     if split not in {"train", "eval"}:
         raise ValueError(f"Unknown split '{split}'. Choose 'train' or 'eval'.")
 
@@ -315,7 +287,6 @@ def build_dataset(split: str = "train") -> list[dict[str, Any]]:
 
 
 def get_task(task_id: str) -> dict[str, Any]:
-    """Look up a single task by ID."""
     for task in _RAW_TASKS:
         if task["task_id"] == task_id:
             return {**task, "split": _SPLIT_MAP[task["task_id"]]}
@@ -323,5 +294,4 @@ def get_task(task_id: str) -> dict[str, Any]:
 
 
 def all_tasks() -> list[dict[str, Any]]:
-    """Return all 30 tasks across both splits."""
     return [{**t, "split": _SPLIT_MAP[t["task_id"]]} for t in _RAW_TASKS]
