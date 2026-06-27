@@ -4,9 +4,9 @@
 
 i used Claude (claude.ai) throughout this assignment.
 
-i started by sharing the assignment PDF and asking for a time breakdown — how long each part would take given 21 hours. then i asked for the full project design before writing any code, just to get the architecture clear in my head first.
+i started by sharing the assignment PDF and asking for a time breakdown, how long each part would take given 21 hours. then i asked for the full project design before writing any code, just to get the architecture clear in my head first.
 
-after that i asked Claude to generate the code file by file — `state.py`, `actions.py`, `rubric.py`, `dataset.py`, `env.py`, `baseline.py`, `run_eval.py`, and the three test files.
+after that i asked Claude to generate the code file by file: `state.py`, `actions.py`, `rubric.py`, `dataset.py`, `env.py`, `baseline.py`, `run_eval.py`, and the three test files.
 
 i also asked it to rewrite the README and this file in my own writing style after sharing a sample of how i normally write.
 
@@ -16,14 +16,14 @@ i also asked it to rewrite the README and this file in my own writing style afte
 
 most of the initial code came from Claude. specifically:
 
-- the full `state.py` with `AppState`, `SCREEN_ELEMENTS`, `NAVIGATION`, and `SCREEN_OBSERVATIONS`
-- `actions.py` — `execute_action()`, `execute_action_list()`, `parse_agent_output()`
-- `rubric.py` — all five reward functions and `compute_reward()`
-- `dataset.py` — all 30 tasks and the `build_dataset()` / `get_task()` functions
-- `env.py` — `MobileUIEnv`, `load_environment()`, and the `_EnvShim` fallback
-- `baseline.py` — `heuristic_agent()`, `dummy_agent()`, `random_agent()`
-- `run_eval.py` — the full eval loop with argparse and failure analysis
-- the three test files as a starting point
+* the full `state.py` with `AppState`, `SCREEN_ELEMENTS`, `NAVIGATION`, and `SCREEN_OBSERVATIONS`
+* `actions.py` , `execute_action()`, `execute_action_list()`, `parse_agent_output()`
+* `rubric.py` , all five reward functions and `compute_reward()`
+* `dataset.py` , all 30 tasks and the `build_dataset()` / `get_task()` functions
+* `env.py` , `MobileUIEnv`, `load_environment()`, and the `_EnvShim` fallback
+* `baseline.py` , `heuristic_agent()`, `dummy_agent()`, `random_agent()`
+* `run_eval.py` , the full eval loop with argparse and failure analysis
+* the three test files as a starting point
 
 ---
 
@@ -31,17 +31,17 @@ most of the initial code came from Claude. specifically:
 
 a few things broke or were missing when i actually ran the code locally:
 
-**`focus_mode_toggle` and `notifications_toggle` weren't doing anything** — tapping them fell through to the no-op return in `execute_action()` without actually flipping the boolean in state. two tests were failing because of this (`test_success_reward_focus_mode` and `test_success_reward_notifications_disabled`). i added the toggle handlers myself inside the tap branch.
+**`focus_mode_toggle` and `notifications_toggle` weren't doing anything** , tapping them fell through to the no-op return in `execute_action()` without actually flipping the boolean in state. two tests were failing because of this (`test_success_reward_focus_mode` and `test_success_reward_notifications_disabled`). i added the toggle handlers myself inside the tap branch.
 
-**`baseline.py` was missing from my local directory** — the file existed in Claude's session but didn't make it into my project when i set it up. i had to manually create it.
+**`baseline.py` was missing from my local directory** , the file existed in Claude's session but didn't make it into my project when i set it up. i had to manually create it.
 
-**`__init__.py` was missing** — package imports were broken without it. created it manually.
+**`__init__.py` was missing** , package imports were broken without it. created it manually.
 
-**`environment.py` vs `env.py`** — my local file was named `environment.py` but the imports in `env.py` and tests expected `env`. had to align the naming.
+**`environment.py` vs `env.py`** , my local file was named `environment.py` but the imports in `env.py` and tests expected `env`. had to align the naming.
 
-**the test files looked too structured** — the original generated test files had numbered section comments, long docstrings, and a very formatted style that didn't look like something i'd write. i asked Claude to rewrite them simpler and then replaced the files. same for the README — rewrote it after sharing a sample of my writing.
+**the test files looked too structured** , the original generated test files had numbered section comments, long docstrings, and a very formatted style that didn't look like something i'd write. i asked Claude to rewrite them simpler and then replaced the files. same for the README, rewrote it after sharing a sample of my writing.
 
-**`notes_created` bug in baseline** — the original heuristic agent for multi-note tasks was navigating to the notes screen once per note instead of once total. Claude caught and fixed this when i pointed it out.
+**`notes_created` bug in baseline** , the original heuristic agent for multi-note tasks was navigating to the notes screen once per note instead of once total. Claude caught and fixed this when i pointed it out.
 
 ---
 
